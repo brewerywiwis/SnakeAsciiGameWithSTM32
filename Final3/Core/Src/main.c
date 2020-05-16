@@ -242,7 +242,6 @@ void updateGameOver() {
 
 void gameInit() {
 	clearMap();
-	HAL_UART_Transmit(&huart2, showCursor, sizeof(showCursor), 10);
 	i = 0;
 	randFood();
 	sx[0] = 32;
@@ -293,6 +292,7 @@ int main(void) {
 	MX_USART2_UART_Init();
 
 	/* USER CODE BEGIN 2 */
+	HAL_UART_Transmit(&huart2, showCursor, sizeof(showCursor), 10);
 	gameInit();
 	/* USER CODE END 2 */
 	/* Infinite loop */
@@ -316,6 +316,7 @@ int main(void) {
 					HAL_UART_Transmit(&huart2, clearAll, sizeof(clearAll), 100);
 					HAL_UART_Transmit(&huart2, msg, sizeof(msg), 10);
 				}
+			} else if (buff[0] == 0) {
 			} else {
 				buff2[i++] = buff[0];
 			}
@@ -355,7 +356,6 @@ int main(void) {
 			HAL_UART_Receive(&huart2, buff, sizeof(buff), 1000);
 			if (buff[0] == 'q' || buff[0] == 'Q') {
 				gameInit();
-				HAL_UART_Transmit(&huart2, hideCursor, sizeof(hideCursor), 10);
 				display();
 				status = 2;
 			}
