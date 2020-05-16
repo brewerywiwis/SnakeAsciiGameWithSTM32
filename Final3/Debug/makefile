@@ -37,8 +37,8 @@ Final3.list \
 all: Final3.elf secondary-outputs
 
 # Tool invocations
-Final3.elf: $(OBJS) $(USER_OBJS) C:\Users\brewd\Desktop\New\ folder\Final3\STM32F411RETX_FLASH.ld
-	arm-none-eabi-gcc -o "Final3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\brewd\Desktop\New folder\Final3\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Final3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Final3.elf: $(OBJS) $(USER_OBJS) C:\Users\brewd\Desktop\embeded\Lab\ Project\Final3\STM32F411RETX_FLASH.ld
+	arm-none-eabi-gcc -o "Final3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\brewd\Desktop\embeded\Lab Project\Final3\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Final3.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -49,12 +49,28 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 const char msg[] = "please enter \"snake\": ";
+const char wantMsg[] = "Do you want to play SNAKE?: ";
 const char clear[] = "\033[J";
-const char clearAll[] = { "\033[2J" };
+const char clearAll[] = "\033[2J";
 const char showCursor[] = { 27, '[', '?', '2', '5', 'h' };
 const char hideCursor[] = { 27, '[', '?', '2', '5', 'l' };
 const char saveCursor[] = { 27, '7' };
 const char restoreCursor[] = { 27, '8' };
+const char gameOver[][52] = {
+		"  ____                          ___                 ",
+		" / ___| __ _ _ __ ___   ___    / _ \\__   _____ _ __ ",
+		"| |  _ / _` | '_ ` _ \\ / _ \\  | | | \\ \\ / / _ \\ '__|",
+		"| |_| | (_| | | | | | |  __/  | |_| |\\ V /  __/ |   ",
+		" \\____|\\__,_|_| |_| |_|\\___|   \\___/  \\_/ \\___|_|   "
+
+};
+const char snake[][31] = { " _____ _   _  ___  _   _______ ",
+		"/  ___| \\ | |/ _ \\| | / /  ___|",
+		"\\ `--.|  \\| / /_\\ \\ |/ /| |__  ",
+		" `--. \\ . ` |  _  |    \\|  __| ",
+		"/\\__/ / |\\  | | | | |\\  \\ |___ ",
+		"\\____/\\_| \\_|_| |_|_| \\_|____/ " };
+
 const int width = 100;
 const int height = 50;
 char render[51][101];
@@ -88,8 +104,7 @@ void clearMap() {
 	}
 }
 void display() {
-	char buffer[20] = { 27, '8' };
-	HAL_UART_Transmit(&huart2, buffer, sizeof(buffer), 10);
+	HAL_UART_Transmit(&huart2, restoreCursor, sizeof(restoreCursor), 10);
 	HAL_UART_Transmit(&huart2, "\r\n", 2, 10);
 	for (int i = 0; i < height + 1; i++) {
 		for (int j = 0; j < width + 1; j++) {
@@ -97,6 +112,13 @@ void display() {
 			HAL_UART_Transmit(&huart2, buff, sizeof(buff), 1000);
 		}
 		HAL_UART_Transmit(&huart2, "\r\n", 2, 10);
+	}
+}
+void displaySnake() {
+	for (int i = 0; i < 6; i++) {
+		HAL_UART_Transmit(&huart2, "                                ", 32, 100);
+		HAL_UART_Transmit(&huart2, snake[i], sizeof(snake[i]), 100);
+		HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
 	}
 }
 void randFood() {
@@ -138,11 +160,11 @@ int buttonDir() {
 }
 
 int checkGameLose() {
-	//check colide with border
+//check colide with border
 	if (sx[0] == 0 || sx[0] == 100 || sy[0] == 0 || sy[0] == 50) {
 		return 1;
 	}
-	//check snake eat their body
+//check snake eat their body
 	for (int i = 1; i < snakeLength; i++) {
 		if (sx[0] == sx[i] && sy[0] == sy[i]) {
 			return 1;
@@ -204,6 +226,20 @@ void update() {
 	}
 }
 
+void updateGameOver() {
+	clearMap();
+	for (int i = 0; i < 5; i++) {
+		for (int j = 0; j < 52; j++) {
+			render[15 + i][24 + j] = gameOver[i][j];
+		}
+	}
+	char info[] = "Please hold \"q\" to try again.";
+	for (int i = 0; i < 29; i++) {
+		render[23][35 + i] = info[i];
+	}
+
+}
+
 void gameInit() {
 	clearMap();
 	HAL_UART_Transmit(&huart2, showCursor, sizeof(showCursor), 10);
@@ -220,7 +256,8 @@ void gameInit() {
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-	dir = buttonDir();
+	int b = buttonDir();
+	dir = b == 0 ? dir : b;
 }
 
 /* USER CODE END PFP */
@@ -271,13 +308,12 @@ int main(void) {
 				if (buff2[i - 1] == 'e' && buff2[i - 2] == 'k'
 						&& buff2[i - 3] == 'a' && buff2[i - 4] == 'n'
 						&& buff2[i - 5] == 's') {
-					HAL_UART_Transmit(&huart2, "\r\n", 2, 10);
-					HAL_UART_Transmit(&huart2, "Do you want to play SNAKE?: ",
-							28, 100);
+					HAL_UART_Transmit(&huart2, clearAll, sizeof(clearAll), 100);
+					HAL_UART_Transmit(&huart2, wantMsg, sizeof(wantMsg), 100);
 					i = 0;
 					status = 1;
 				} else {
-					HAL_UART_Transmit(&huart2, "\r\n", 2, 10);
+					HAL_UART_Transmit(&huart2, clearAll, sizeof(clearAll), 100);
 					HAL_UART_Transmit(&huart2, msg, sizeof(msg), 10);
 				}
 			} else {
@@ -289,14 +325,8 @@ int main(void) {
 			HAL_UART_Transmit(&huart2, buff, sizeof(buff), 5000);
 			if (buff[0] == 13) {
 				if (buff2[i - 1] == 'y' || buff2[i - 1] == 'Y') {
-					HAL_UART_Transmit(&huart2, clearAll, sizeof(clearAll), 10);
-					char snake[] =
-							" _____ _   _  ___  _   _______ \r\n/  ___| \\ | |/ _ \\| | / /  ___|\r\n\\ `--.|  \\| / /_\\ \\ |/ /| |__  \r\n `--. \\ . ` |  _  |    \\|  __| \r\n/\\__/ / |\\  | | | | |\\  \\ |___ \r\n\\____/\\_| \\_|_| |_|_| \\_|____/ \r\n";
-					HAL_UART_Transmit(&huart2, snake, sizeof(snake), 1000);
-					HAL_UART_Transmit(&huart2, "\r\n", 2, 10);
-					HAL_UART_Transmit(&huart2, "SNAKE Ready!\r\n",
-							sizeof("SNAKE Ready!\r\n"), 100);
-
+					HAL_UART_Transmit(&huart2, clearAll, sizeof(clearAll), 100);
+					displaySnake();
 					HAL_UART_Transmit(&huart2, saveCursor, sizeof(saveCursor),
 							10);
 					HAL_UART_Transmit(&huart2, hideCursor, sizeof(hideCursor),
@@ -305,10 +335,11 @@ int main(void) {
 					display();
 					status = 2;
 				} else {
-					HAL_UART_Transmit(&huart2, "\r\n", 2, 10);
+					HAL_UART_Transmit(&huart2, clearAll, sizeof(clearAll), 100);
 					HAL_UART_Transmit(&huart2, msg, sizeof(msg), 10);
 					status = 0;
 				}
+			} else if (buff[0] == 0) {
 			} else {
 				buff2[i++] = buff[0];
 			}
@@ -317,16 +348,13 @@ int main(void) {
 			display();
 			HAL_Delay(100);
 		} else if (status == 3) {
-			char msg1[] = "\r\nGame Over!!!\r\nPlease hold \"q\" to try again.";
-			HAL_UART_Transmit(&huart2, msg1, sizeof(msg1), 10);
-			HAL_UART_Transmit(&huart2, restoreCursor, sizeof(restoreCursor),
-					10);
+			updateGameOver();
+			display();
 			status = 4;
 		} else if (status == 4) {
 			HAL_UART_Receive(&huart2, buff, sizeof(buff), 1000);
 			if (buff[0] == 'q' || buff[0] == 'Q') {
 				gameInit();
-				HAL_UART_Transmit(&huart2, clear, sizeof(clear), 10);
 				HAL_UART_Transmit(&huart2, hideCursor, sizeof(hideCursor), 10);
 				display();
 				status = 2;
